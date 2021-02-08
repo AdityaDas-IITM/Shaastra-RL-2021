@@ -41,7 +41,7 @@ class SnakeGame:
         state = self.get_obs()
         return state
 
-    def step(self, action):
+    def step(self, action, store_frames=False):
         #0:left, 1:right, 2:up, 3:down
         curr_state = self.get_obs()
         done = False
@@ -80,8 +80,9 @@ class SnakeGame:
             reward = -20
             self.snake_body = self.snake_body[:-1]
             state = self.get_obs()
-
-        self.add_frame(done)
+        
+        if store_frames:
+            self.add_frame(done)
         
         return state, reward, done
 
@@ -134,7 +135,7 @@ if __name__ == '__main__':
         a = game.render()
         action_str = input("Action: ")
         action = action_dict[action_str]
-        state, reward, done = game.step(action)
+        state, reward, done = game.step(action, store_frames=True)
         print(state, reward, done)
 
     

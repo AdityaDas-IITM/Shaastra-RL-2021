@@ -27,7 +27,7 @@ def test(qtable, render = False):
         if render:
             game.render()
         action = np.argmax(qtable[state,:])
-        next_state, reward, done = game.step(action)
+        next_state, reward, done = game.step(action, store_frames=True)
         next_state = state_index(next_state)
         state = next_state
     return game.pellets
@@ -40,13 +40,15 @@ def train():
     lr = 0.2
     qtable = np.zeros((states, actions))
 
-    for i in range(num_episodes):
+    for i in range(1,num_episodes+1):
         state = game.reset_board()
         state = state_index(state)
         done = False
+        ct = 0
         while not done:
             #uncomment if you want to see training, warning:it will slow down training
             #game.render()
+            ct+=1
             if random.random() > eps:
                 action = np.argmax(qtable[state,:])
             else:
@@ -57,7 +59,11 @@ def train():
             tderror = reward + (1-done)*gamma*np.max(qtable[next_state,:]) - qtable[state, action]
             qtable[state,action] = qtable[state,action] + lr*tderror
             state = next_state
+
+            if ct==100000:
+                break
         if i%100 == 0:
+            print("Episode", i, "reached")
             pellets= test(qtable)
             if pellets > max_pellets:
                 print(f"Score : {pellets}")
@@ -68,7 +74,7 @@ def train():
 
 if __name__ == '__main__':
     qtable = train()
-    test(qtable, True)
-
+    test_score = test(qtable, True)
+    print("Final score: ", test_score)
 
 

@@ -13,16 +13,20 @@ class SnakeGame:
             for pos in self.snake_body:
                 board[pos[1], pos[0]] = [4/255, 82/255, 217/255]
         board[self.food_pos[1], self.food_pos[0]] = [217/255, 4/255, 86/255]
-        self.frames.append(board.tolist())
+        if self.save_frames:
+            self.frames.append(board.tolist())
+        else:
+            self.frames = [board.tolist()]
 
     def render(self):
         a = plt.imshow(self.frames[-1], animated = True)
         plt.axis('off')
         plt.draw()
-        plt.pause(0.01)
+        plt.pause(0.001)
         return a
 
-    def reset_board(self):
+    def reset_board(self, save_frames = False):
+        plt.close('all')
         self.board = np.zeros((self.h, self.w, 3))
         for i in range(self.w):
             for j in range(self.h):
@@ -36,7 +40,7 @@ class SnakeGame:
         self.pellets = 0
         self.placefood()
         self.frames = []
-
+        self.save_frames = save_frames
         self.add_frame()
         state = self.get_obs()
         return state
@@ -127,8 +131,7 @@ if __name__ == '__main__':
     action_dict = {'left':0, 'right':1, 'up':2, 'down':3}
     state = game.reset_board()
     print(state)
-    
-    fig = plt.figure()
+
     done = False
     while not done:
         a = game.render()

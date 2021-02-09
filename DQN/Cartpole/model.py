@@ -6,34 +6,31 @@ import numpy as np
 import random
 import torch.nn.functional as F
 
-BUFFER_SIZE = int(1e7)  # replay buffer size
+BUFFER_SIZE = int(1e6)  # replay buffer size
 BATCH_SIZE = 512        # minibatch size
-GAMMA = 0.99            # discount factor
-LR = 5e-4               # learning rate 
-UPDATE_EVERY = 8        # how often to update the network
+GAMMA = 0.95            # discount factor
+LR = 1e-3               # learning rate 
+UPDATE_EVERY = 5        # how often to update the network
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-device = 'cpu'
+TAU = 1e-3
 
 class QNetwork(nn.Module):
-    def __init__(self, action_size, input_shape, output_shape):
+    def __init__(self, input_shape, output_shape):
         super(QNetwork, self).__init__()
-        self.fc1 = nn.Sequential(nn.Linear(input_shape,16), nn.ReLU())
-        self.fc2 = nn.Sequential(nn.Linear(16,32), nn.ReLU())
-        self.fc3 = nn.Sequential(nn.Linear(32,16), nn.ReLU())
-        self.out = nn.Sequential(nn.Linear(16,output_shape))
+        self.fc1 = nn.Sequential(nn.Linear(input_shape,24), nn.ReLU())
+        self.fc2 = nn.Sequential(nn.Linear(24,24), nn.ReLU())
+        self.out = nn.Sequential(nn.Linear(24,output_shape))
     
     def forward(self, x):
         x = self.fc1(x)
         x = self.fc2(x)
-        x = self.fc3(x)
         x = self.out(x)
         return x
 
 class ReplayBuffer:
 
-    def __init__(self, action_size, buffer_size, batch_size):
+    def __init__(self, buffer_size, batch_size):
 
-        self.action_size = action_size
         self.memory = deque(maxlen=buffer_size)  
         self.batch_size = batch_size
         self.experience = namedtuple("Experience", field_names=["state", "action", "reward", "next_state", "done"])
@@ -59,29 +56,27 @@ class ReplayBuffer:
 
 class Agent():
 
-    def __init__(self, action_size, input_shape, input_channels):
+    def __init__(self, input_shape, action_size):
     
         self.input_shape = input_shape
         self.action_size = action_size
 
-        self.qnetwork_local = QNetwork(action_size, input_shape, input_channels).to(device)
+        self.qnetwork_local = QNetwork(input_shape, action_size).to(device)
+        self.qnetwork_target = QNetwork(input_shape, action_size)
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
 
-        self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE)
+        self.memory = ReplayBuffer(BUFFER_SIZE, BATCH_SIZE)
     
         self.t_step = 0
     
     def step(self, state, action, reward, next_state, done):
-        action = np.argmax(np.array(action))
-    
-        self.memory.add_exp([state], action, reward, [next_state], done)
+        self.memory.add_exp(state, action, reward, next_state, done)
         
         self.t_step +=1
         if self.t_step % UPDATE_EVERY == 0:
             if len(self.memory) > BATCH_SIZE:
-                for i in range(5):
-                    experiences = self.memory.sample_batch()
-                    self.learn(experiences, GAMMA)
+                experiences = self.memory.sample_batch()
+                self.learn(experiences, GAMMA)
 
     def get_action(self, state, eps):
         # Epsilon-greedy action selection
@@ -91,25 +86,27 @@ class Agent():
             with torch.no_grad():
                 action_values = self.qnetwork_local(state)
             self.qnetwork_local.train()
-            action_idx = np.argmax(action_values.cpu().data.numpy())
-            action = np.zeros((self.action_size,))
-            action[action_idx] = 1
-            return list(action)
+            action = np.argmax(action_values.cpu().data.numpy())
+            return action
         else:
-            action_idx = random.choice(np.arange(self.action_size))
-            action = np.zeros((self.action_size,))
-            action[action_idx] = 1
-            return list(action)
+            action = random.choice(range(self.action_size))
+            return action
         
 
     def learn(self, experiences, gamma):
         states, actions, rewards, next_states, dones = experiences
 
+        self.qnetwork_local.eval()
         Q_targets_next, _ = torch.max(self.qnetwork_local(next_states).detach(), dim = 1, keepdim = True)
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
-    
-        Q_expected = torch.gather(self.qnetwork_local(states), dim = 1, index = actions)
+        self.qnetwork_local.train()
+
+        Q_expected = self.qnetwork_local(states).gather(1, actions)
         loss = F.mse_loss(Q_expected, Q_targets)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+
+
+

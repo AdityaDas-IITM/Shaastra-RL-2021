@@ -1,0 +1,7 @@
+/gitignore
+/DQN/Cartpole/__pycache__
+/DQN/Vizdoom/__pycache__
+/DQN/Vizdoom/_vizdoom
+/DQN/Vizdoom/_vizdoom.ini
+/QLearning/SnakeGame/__pycache__
+

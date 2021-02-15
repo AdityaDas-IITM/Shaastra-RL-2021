@@ -3,6 +3,7 @@ from model import Agent
 import torch
 import matplotlib.pyplot as plt
 import time
+import random
 
 def train(game, num_episodes, agent):
     torch.manual_seed(543)
@@ -22,23 +23,22 @@ def train(game, num_episodes, agent):
         if score > 200:
             torch.save(agent.network.state_dict(), "./models/LunarLander.pth")
 
-def infer(game, agent, random = False, path = './models/LunarLander.pth'):
+def infer(game, agent, arbit = False, path = './models/LunarLander.pth'):
     agent.clearmemory()
-    if not random:
+    if not arbit:
         agent.network.load_state_dict(torch.load(path))
     for k in range(5):
         done = False
         state = game.reset()
-        score = 0
         while not done:
             game.render()
-            action = agent.get_action(state, sample = False)
+            if not arbit:
+                action = agent.get_action(state, sample = False)
+            else:
+                action = random.choice(range(action_size))
             next_state, reward, done, _ = game.step(action)
-            agent.rewards.append(reward)
             state = next_state
-            score += reward
             time.sleep(0.015)
-        print(f'Episode {k} Score {score}')
         
 
 
@@ -57,5 +57,5 @@ if __name__=='__main__':
     agent = Agent(state_size, action_size, gamma = 0.99, fc1 = 64, fc2 = 64)
 
     #train(game, num_episodes, agent)
-    infer(game, agent, random = False)
+    infer(game, agent, arbit = False)
     

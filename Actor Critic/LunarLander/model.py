@@ -17,19 +17,22 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class ActorCritic(nn.Module):
     def __init__(self, input_shape, action_size, fc1, fc2):
         super(ActorCritic, self).__init__()
+        # Actor network
         self.fc1 = nn.Sequential(nn.Linear(input_shape, fc1), nn.ReLU())
         self.action_layer = nn.Sequential(nn.Linear(fc1, action_size), nn.Softmax())
 
+        #Critic network
         self.fc2 = nn.Sequential(nn.Linear(input_shape,fc2), nn.ReLU())
         self.value_layer = nn.Linear(fc2, 1)
         
     def forward(self, state):
+        #Policy output
         x1 = self.fc1(state)
         action_probs = self.action_layer(x1)
 
+        #Value output
         x2 = self.fc2(state)
         state_value = self.value_layer(x2)
-        
         
         return action_probs, state_value
 
@@ -62,12 +65,7 @@ class Agent():
         else:
             action = np.argmax(action_probs.cpu().data.numpy())
             return action
-
-        
-
-        
     
-
     def learn(self):
         self.optimizer.zero_grad()
         

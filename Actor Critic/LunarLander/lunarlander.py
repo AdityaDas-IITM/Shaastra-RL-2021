@@ -23,7 +23,7 @@ def train(game, num_episodes, agent):
         if score > 200:
             torch.save(agent.network.state_dict(), "./models/LunarLander.pth")
 
-def infer(game, agent, arbit = False, path = './models/LunarLander.pth'):
+def infer(game, vid, agent, arbit = False, path = './models/LunarLander.pth'):
     agent.clearmemory()
     if not arbit:
         agent.network.load_state_dict(torch.load(path))
@@ -31,7 +31,8 @@ def infer(game, agent, arbit = False, path = './models/LunarLander.pth'):
         done = False
         state = game.reset()
         while not done:
-            game.render()
+            #game.render()
+            vid.capture_frame()
             if not arbit:
                 action = agent.get_action(state, sample = False)
             else:
@@ -48,6 +49,7 @@ def infer(game, agent, arbit = False, path = './models/LunarLander.pth'):
 if __name__=='__main__':
     #pip install gym[Box2D] -- maybe needed
     game = gym.make('LunarLander-v2')
+    vid = gym.wrappers.monitoring.video_recorder.VideoRecorder(game, path = './random.mp4')
     action_size = game.action_space.n
     print("Action size ", action_size)
 
@@ -57,5 +59,6 @@ if __name__=='__main__':
     agent = Agent(state_size, action_size, gamma = 0.99, fc1 = 64, fc2 = 64)
 
     #train(game, num_episodes, agent)
-    infer(game, agent, arbit = False)
+    infer(game, vid, agent, arbit = False)
+    game.close()
     

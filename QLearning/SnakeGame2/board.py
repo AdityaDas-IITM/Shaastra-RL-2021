@@ -128,7 +128,7 @@ class SnakeGame:
 
 if __name__ == '__main__':
     game = SnakeGame((30,30))
-    action_dict = {'left':0, 'right':1, 'up':2, 'down':3}
+    action_dict = {'L':0, 'R':1, 'U':2, 'D':3}
     state = game.reset_board()
     print(state)
     

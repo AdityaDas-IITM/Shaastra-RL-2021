@@ -1,7 +1,7 @@
 from board import SnakeGame
 import random
 import numpy as np
-import cv2
+
 
 game = SnakeGame((20, 20))
 states = 2**8 
@@ -68,7 +68,7 @@ def train():
                 print(f"Score : {pellets}")
                 max_pellets = pellets
                 best_q = qtable
-    return qtable
+    return best_q
 
 if __name__ == '__main__':
     qtable = train()
